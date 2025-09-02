@@ -10,6 +10,8 @@ interface Props {
     index: number;
     name: string;
     route: string;
+    isArticle?: boolean;
+    articleSlug?: string;
   }[];
   selectedIndex: number;
   setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
@@ -17,6 +19,7 @@ interface Props {
   setCurrentComponent: React.Dispatch<React.SetStateAction<string>>;
   visiblePageIndexs: number[];
   setVisiblePageIndexs: React.Dispatch<React.SetStateAction<number[]>>;
+  removeArticleTab: (index: number) => void;
 }
 
 export default function AppButtons({
@@ -27,6 +30,7 @@ export default function AppButtons({
   setCurrentComponent,
   visiblePageIndexs,
   setVisiblePageIndexs,
+  removeArticleTab,
 }: Props) {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -135,9 +139,15 @@ export default function AppButtons({
             elevation={0}
             onClick={(e: any) => {
               e.stopPropagation();
-              setVisiblePageIndexs(
-                visiblePageIndexs.filter((x) => x !== index)
-              );
+              // Find the page to check if it's an article
+              const page = pages.find(p => p.index === index);
+              if (page?.isArticle) {
+                removeArticleTab(index);
+              } else {
+                setVisiblePageIndexs(
+                  visiblePageIndexs.filter((x) => x !== index)
+                );
+              }
             }}
           >
             <VscChromeClose />

@@ -2,6 +2,7 @@ import React from "react";
 import { Box, Link, Paper, Tooltip } from "@mui/material";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import { VscFiles, VscSettingsGear } from "react-icons/vsc";
 import { BiGitBranch } from "react-icons/bi";
 import Divider from "@mui/material/Divider";
@@ -43,6 +44,36 @@ export default function Sidebar({
         justifyContent="center"
         flexDirection="column"
       >
+        <Tooltip title="Home" arrow placement="right">
+          <Box
+            sx={{
+              "&:hover": {
+                cursor: "pointer",
+              },
+            }}
+            onClick={() => {
+              navigate("/");
+              setSelectedIndex(-1);
+            }}
+          >
+            <Box
+              sx={{
+                flexGrow: 0,
+                my: 1.5,
+                color: "#858585",
+                fontSize: 24,
+                outline: "none",
+                "&:hover": {
+                  color: "white",
+                },
+              }}
+              display="flex"
+              justifyContent="center"
+            >
+              <HomeOutlinedIcon />
+            </Box>
+          </Box>
+        </Tooltip>
         <Box
           sx={{
             borderLeft: expanded
@@ -75,7 +106,7 @@ export default function Sidebar({
         <Tooltip title="Source of this project" arrow placement="right">
           <Link
             target="_blank"
-            href={"https://github.com/noworneverev/react-vscode-portfolio"}
+            href={"https://github.com/bet0x/react-vscode-portfolio"}
             underline="none"
             color="inherit"
             sx={{ WebkitTapHighlightColor: "rgba(0,0,0,0)" }}
@@ -104,30 +135,61 @@ export default function Sidebar({
 
         {links.map((link) => (
           <Tooltip title={link.title} arrow placement="right" key={link.index}>
-            <Link
-              target="_blank"
-              href={link.href}
-              underline="none"
-              color="inherit"
-              sx={{ WebkitTapHighlightColor: "rgba(0,0,0,0)" }}
-            >
-              <Box
-                sx={{
-                  flexGrow: 0,
-                  m: 0.5,
-                  color: "#858585",
-                  fontSize: 24,
-                  "&:hover": {
-                    color: "white",
-                  },
-                  cursor: "pointer",
+            {link.href.startsWith('/') ? (
+              // Internal link - use router navigation
+              <Link
+                onClick={() => {
+                  setSelectedIndex(-1);
+                  navigate(link.href);
                 }}
-                display="flex"
-                justifyContent="center"
+                underline="none"
+                color="inherit"
+                sx={{ WebkitTapHighlightColor: "rgba(0,0,0,0)" }}
               >
-                <Box mt={0.7}>{link.icon}</Box>
-              </Box>
-            </Link>
+                <Box
+                  sx={{
+                    flexGrow: 0,
+                    m: 0.5,
+                    color: "#858585",
+                    fontSize: 24,
+                    "&:hover": {
+                      color: "white",
+                    },
+                    cursor: "pointer",
+                  }}
+                  display="flex"
+                  justifyContent="center"
+                >
+                  <Box mt={0.7}>{link.icon}</Box>
+                </Box>
+              </Link>
+            ) : (
+              // External link - open in new tab
+              <Link
+                target="_blank"
+                href={link.href}
+                underline="none"
+                color="inherit"
+                sx={{ WebkitTapHighlightColor: "rgba(0,0,0,0)" }}
+              >
+                <Box
+                  sx={{
+                    flexGrow: 0,
+                    m: 0.5,
+                    color: "#858585",
+                    fontSize: 24,
+                    "&:hover": {
+                      color: "white",
+                    },
+                    cursor: "pointer",
+                  }}
+                  display="flex"
+                  justifyContent="center"
+                >
+                  <Box mt={0.7}>{link.icon}</Box>
+                </Box>
+              </Link>
+            )}
           </Tooltip>
         ))}
       </Box>

@@ -5,6 +5,17 @@ import reportWebVitals from "./reportWebVitals";
 // import { BrowserRouter } from 'react-router-dom';
 import { HashRouter } from "react-router-dom";
 
+// Polyfill for Buffer in browser environment (required for gray-matter)
+declare global {
+  interface Window {
+    Buffer: any;
+  }
+}
+
+if (typeof window !== 'undefined' && !window.Buffer) {
+  window.Buffer = require('buffer').Buffer;
+}
+
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );

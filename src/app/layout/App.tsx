@@ -8,23 +8,28 @@ import {
   ThemeProvider,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import AppTree from "./AppTree";
 import Footer from "./Footer";
 import Sidebar from "./Sidebar";
-import { Routes, Route, useNavigate, Navigate } from "react-router-dom";
+import { Routes, Route, useNavigate, Navigate, useLocation } from "react-router-dom";
 import AppButtons from "./AppButtons";
 import MDContainer from "../components/MDContainer";
 import Home from "../pages/Home";
+import BlogIndex from "../components/BlogIndex";
+import ArticleContainer from "../components/ArticleContainer";
 import { pages } from "../pages/pages";
 import usePageTracking from "../hooks/usePageTracking";
 import { isBrowser } from "react-device-detect";
+import { articlesService } from "../services/ArticlesService";
 
 interface Page {
   index: number;
   name: string;
   route: string;
   visible: boolean;
+  isArticle?: boolean;
+  articleSlug?: string;
 }
 
 function initVisiblePageIndexs(pages: Page[]) {
@@ -38,6 +43,7 @@ function initVisiblePageIndexs(pages: Page[]) {
 
 export default function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [expanded, setExpanded] = useState(isBrowser);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [currentComponent, setCurrentComponent] = useState("");
@@ -48,6 +54,8 @@ export default function App() {
   const [visiblePages, setVisiblePages] = useState(
     pages.filter((x) => x.visible)
   );
+  const [articlePages, setArticlePages] = useState<Page[]>([]);
+  const [nextArticleIndex, setNextArticleIndex] = useState(1000); // Start article indexes at 1000
   const paletteType = darkMode ? "dark" : "light";
   usePageTracking();
   const theme = createTheme({
@@ -78,6 +86,53 @@ export default function App() {
     localStorage.setItem("theme", darkMode ? "light" : "dark");
   }
 
+  // Function to add article as a tab
+  const addArticleTab = useCallback(async (slug: string) => {
+    // Check if article tab already exists
+    const existingArticle = articlePages.find(page => page.articleSlug === slug);
+    if (existingArticle) {
+      setSelectedIndex(existingArticle.index);
+      return;
+    }
+
+    // Get article data to create tab
+    try {
+      const article = await articlesService.getArticleBySlug(slug);
+      if (article) {
+        const newArticlePage: Page = {
+          index: nextArticleIndex,
+          name: `${slug}.md`,
+          route: `/article/${slug}`,
+          visible: true,
+          isArticle: true,
+          articleSlug: slug
+        };
+
+        setArticlePages(prev => [...prev, newArticlePage]);
+        setVisiblePageIndexs(prev => [...prev, nextArticleIndex]);
+        setSelectedIndex(nextArticleIndex);
+        setNextArticleIndex(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('Error loading article for tab:', error);
+    }
+  }, [articlePages, nextArticleIndex]);
+
+  // Function to remove article tab
+  const removeArticleTab = useCallback((index: number) => {
+    setArticlePages(prev => prev.filter(page => page.index !== index));
+    setVisiblePageIndexs(prev => prev.filter(idx => idx !== index));
+  }, []);
+
+  // Detect navigation to articles
+  useEffect(() => {
+    const currentPath = location.pathname;
+    if (currentPath.startsWith('/article/')) {
+      const slug = currentPath.replace('/article/', '');
+      addArticleTab(slug);
+    }
+  }, [location.pathname, addArticleTab]);
+
   useEffect(() => {
     const currentTheme = localStorage.getItem("theme");
     if (!currentTheme) setDarkMode(true);
@@ -89,11 +144,17 @@ export default function App() {
   )?.index;
 
   useEffect(() => {
-    const newPages = visiblePageIndexs
+    // Combine static pages and article pages
+    const staticPages = visiblePageIndexs
       .map((index) => pages.find((x) => x.index === index))
       .filter((page): page is Page => page !== undefined);
+    
+    const dynamicArticlePages = visiblePageIndexs
+      .map((index) => articlePages.find((x) => x.index === index))
+      .filter((page): page is Page => page !== undefined);
 
-    setVisiblePages(newPages);
+    const allPages = [...staticPages, ...dynamicArticlePages];
+    setVisiblePages(allPages);
 
     if (visiblePageIndexs.length === 0) {
       // No visible pages, reset selection and navigate to the home page
@@ -111,10 +172,10 @@ export default function App() {
 
       setSelectedIndex(newSelectedIndex);
 
-      const newPage = pages.find((x) => x.index === newSelectedIndex);
+      const newPage = allPages.find((x) => x.index === newSelectedIndex);
       if (newPage) navigate(newPage.route);
     }
-  }, [visiblePageIndexs, navigate, deletedIndex, selectedIndex]);
+  }, [visiblePageIndexs, navigate, deletedIndex, selectedIndex, articlePages]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -178,6 +239,7 @@ export default function App() {
                   setCurrentComponent={setCurrentComponent}
                   visiblePageIndexs={visiblePageIndexs}
                   setVisiblePageIndexs={setVisiblePageIndexs}
+                  removeArticleTab={removeArticleTab}
                 />
               </Grid>
 
@@ -193,7 +255,19 @@ export default function App() {
                     path="/"
                     element={<Home setSelectedIndex={setSelectedIndex} />}
                   />
-                  {pages.map(({ index, name, route }) => (
+                  
+                  {/* Blog Routes */}
+                  <Route
+                    path="/articles"
+                    element={<BlogIndex />}
+                  />
+                  <Route
+                    path="/article/:slug"
+                    element={<ArticleContainer />}
+                  />
+                  
+                  {/* Static Page Routes */}
+                  {pages.filter(page => page.route !== '/articles').map(({ index, name, route }) => (
                     <Route
                       key={index}
                       path={route}

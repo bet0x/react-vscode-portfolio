@@ -8,8 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import React, { useEffect } from "react";
-import logo from "../../static/favicon.png";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { links } from "./links";
 
 interface Props {
@@ -18,6 +17,7 @@ interface Props {
 
 export default function Home({ setSelectedIndex }: Props) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   useEffect(() => {
     setSelectedIndex(-1);
   }, [setSelectedIndex]);
@@ -37,9 +37,9 @@ export default function Home({ setSelectedIndex }: Props) {
     >
       <Grid item xs={3}>
         <Stack direction={{ xs: "column", sm: "row-reverse" }} spacing={2}>
-          <Box display="flex" sx={{ justifyContent: "center" }}>
+          {/* <Box display="flex" sx={{ justifyContent: "center" }}>
             <img src={logo} width="100px" alt="logo" />
-          </Box>
+          </Box> */}
           <Box>
             <Grid
               display="flex"
@@ -62,14 +62,30 @@ export default function Home({ setSelectedIndex }: Props) {
               <Stack direction="row" spacing={0.4}>
                 {links.map((link) => (
                   <Tooltip key={link.index} title={link.title} arrow>
-                    <Link
-                      target="_blank"
-                      href={link.href}
-                      underline="none"
-                      color="inherit"
-                    >
-                      <IconButton color="inherit">{link.icon}</IconButton>
-                    </Link>
+                    {link.href.startsWith('/') ? (
+                      // Internal link - use router navigation
+                      <Link
+                        onClick={() => {
+                          setSelectedIndex(-1);
+                          navigate(link.href);
+                        }}
+                        underline="none"
+                        color="inherit"
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        <IconButton color="inherit">{link.icon}</IconButton>
+                      </Link>
+                    ) : (
+                      // External link - open in new tab
+                      <Link
+                        target="_blank"
+                        href={link.href}
+                        underline="none"
+                        color="inherit"
+                      >
+                        <IconButton color="inherit">{link.icon}</IconButton>
+                      </Link>
+                    )}
                   </Tooltip>
                 ))}
               </Stack>
